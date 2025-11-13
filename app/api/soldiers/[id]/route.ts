@@ -1,11 +1,24 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { fetchLatestThingSpeakReading, parseThingSpeakVitals, determineSoldierStatus } from "@/lib/thingspeak"
 
+const soldierRoster = [
+  { id: "soldier_1", name: "James Mitchell", rank: "SGT", unit: "Alpha Squadron" },
+  { id: "soldier_2", name: "Sarah Rodriguez", rank: "CPL", unit: "Alpha Squadron" },
+  { id: "soldier_3", name: "Marcus Johnson", rank: "SPC", unit: "Bravo Squadron" },
+  { id: "soldier_4", name: "Emily Chen", rank: "SGT", unit: "Bravo Squadron" },
+  { id: "soldier_5", name: "David Thompson", rank: "PFC", unit: "Charlie Squadron" },
+  { id: "soldier_6", name: "Jessica Martinez", rank: "CPL", unit: "Charlie Squadron" },
+  { id: "soldier_7", name: "Robert Williams", rank: "SGT", unit: "Delta Squadron" },
+  { id: "soldier_8", name: "Amanda Davis", rank: "SPC", unit: "Delta Squadron" },
+]
+
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params
 
-    if (id !== "soldier_1") {
+    const soldierInfo = soldierRoster.find((s) => s.id === id)
+
+    if (!soldierInfo) {
       return NextResponse.json({ message: "Soldier not found" }, { status: 404 })
     }
 
@@ -15,14 +28,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ message: "No IoT data available" }, { status: 503 })
     }
 
-    const vitals = parseThingSpeakVitals(latestFeed, id)
+    const vitals = parseThingSpeakVitals(latestFeed, "soldier_1")
     const status = determineSoldierStatus(vitals.heartRate, vitals.temperature, vitals.bloodOxygenSaturation)
 
     const soldierDetail = {
       id,
-      name: "Soldier 1",
-      rank: "SGT",
-      unit: "Alpha Squadron",
+      name: soldierInfo.name,
+      rank: soldierInfo.rank,
+      unit: soldierInfo.unit,
       status,
       pulse: vitals.heartRate,
       heartRate: vitals.heartRate,

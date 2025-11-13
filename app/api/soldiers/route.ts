@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server"
 import { fetchLatestThingSpeakReading, parseThingSpeakVitals, determineSoldierStatus } from "@/lib/thingspeak"
 
+const soldierRoster = [
+  { id: "soldier_1", name: "James Mitchell", rank: "SGT", unit: "Alpha Squadron" },
+  { id: "soldier_2", name: "Sarah Rodriguez", rank: "CPL", unit: "Alpha Squadron" },
+  { id: "soldier_3", name: "Marcus Johnson", rank: "SPC", unit: "Bravo Squadron" },
+  { id: "soldier_4", name: "Emily Chen", rank: "SGT", unit: "Bravo Squadron" },
+  { id: "soldier_5", name: "David Thompson", rank: "PFC", unit: "Charlie Squadron" },
+  { id: "soldier_6", name: "Jessica Martinez", rank: "CPL", unit: "Charlie Squadron" },
+  { id: "soldier_7", name: "Robert Williams", rank: "SGT", unit: "Delta Squadron" },
+  { id: "soldier_8", name: "Amanda Davis", rank: "SPC", unit: "Delta Squadron" },
+]
+
 export async function GET() {
   try {
     const latestFeed = await fetchLatestThingSpeakReading()
@@ -15,11 +26,11 @@ export async function GET() {
     const vitals = parseThingSpeakVitals(latestFeed, "soldier_1")
     const status = determineSoldierStatus(vitals.heartRate, vitals.temperature, vitals.bloodOxygenSaturation)
 
-    const soldier = {
-      id: "soldier_1",
-      name: "Soldier 1",
-      rank: "SGT",
-      unit: "Alpha Squadron",
+    const soldiers = soldierRoster.map((soldier) => ({
+      id: soldier.id,
+      name: soldier.name,
+      rank: soldier.rank,
+      unit: soldier.unit,
       status,
       pulse: vitals.heartRate,
       temperature: vitals.temperature,
@@ -28,9 +39,7 @@ export async function GET() {
       humidity: vitals.humidity,
       lastUpdate: vitals.timestamp,
       position: { lat: vitals.latitude, lng: vitals.longitude },
-    }
-
-    const soldiers = [soldier]
+    }))
 
     // Generate alerts for critical vitals
     const alerts = soldiers
@@ -45,7 +54,7 @@ export async function GET() {
         resolved: false,
       }))
 
-    console.log("[v0] Sending soldier data:", { soldier, alerts })
+    console.log("[v0] Sending soldier data:", { soldierCount: soldiers.length, alerts })
 
     return NextResponse.json({
       soldiers,
