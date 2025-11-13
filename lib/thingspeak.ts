@@ -140,10 +140,11 @@ export function determineSoldierStatus(
   temperature: number,
   bloodOxygen: number,
 ): "active" | "warning" | "critical" {
-  if (heartRate > 120 || temperature > 38.5 || bloodOxygen < 94) {
+  // Temperature from DHT22 sensor is environmental, not body temp
+  if (heartRate > 120 || temperature > 45 || bloodOxygen < 90) {
     return "critical"
   }
-  if (heartRate > 100 || temperature > 37.5 || bloodOxygen < 96) {
+  if (heartRate > 100 || temperature > 40 || bloodOxygen < 94) {
     return "warning"
   }
   return "active"

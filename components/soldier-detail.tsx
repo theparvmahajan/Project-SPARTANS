@@ -25,8 +25,10 @@ interface SoldierDetailProps {
 
 export function SoldierDetail({ soldier }: SoldierDetailProps) {
   const getHealthStatus = (pulse: number, temp: number, o2: number): string => {
-    if (pulse > 120 || pulse < 40 || temp > 38.5 || temp < 35.5 || o2 < 94) return "CRITICAL"
-    if (pulse > 100 || pulse < 50 || temp > 38 || temp < 36 || o2 < 96) return "WARNING"
+    // Temperature from sensor is in Celsius - 24°C is normal room temp, not body temp
+    // Adjusted for environmental temperature readings
+    if (pulse > 120 || pulse < 40 || temp > 45 || temp < -10 || o2 < 90) return "CRITICAL"
+    if (pulse > 100 || pulse < 50 || temp > 40 || temp < 0 || o2 < 94) return "WARNING"
     return "NORMAL"
   }
 
@@ -239,7 +241,16 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
             <p className="font-semibold text-sm">Timestamp</p>
           </div>
         </div>
-        <p className="text-lg font-mono text-accent truncate">{new Date(soldier.lastUpdate).toLocaleTimeString()}</p>
+        <p className="text-lg font-mono text-accent truncate">
+          {new Date(soldier.lastUpdate).toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })}
+        </p>
         <p className="text-sm text-muted-foreground">
           {Math.round((Date.now() - new Date(soldier.lastUpdate).getTime()) / 1000)}s ago
         </p>

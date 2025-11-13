@@ -8,9 +8,9 @@ interface Soldier {
   rank: string
   unit: string
   status: "active" | "warning" | "critical"
-  heartRate: number
+  pulse: number // Was heartRate
   temperature: number
-  oxygenLevel: number
+  bloodOxygen: number // Was oxygenLevel
   lastUpdate: string
 }
 
@@ -33,7 +33,7 @@ export function SoldierCard({ soldier, isSelected, onClick }: SoldierCardProps) 
     critical: <AlertTriangle className="text-red-500" size={20} />,
   }
 
-  const isVitalCritical = soldier.heartRate > 120 || soldier.temperature > 39 || soldier.oxygenLevel < 95
+  const isVitalCritical = soldier.pulse > 120 || soldier.temperature > 39 || soldier.bloodOxygen < 95
 
   return (
     <button
@@ -58,7 +58,7 @@ export function SoldierCard({ soldier, isSelected, onClick }: SoldierCardProps) 
             <Heart size={16} className="text-red-500" />
             <span className="text-xs text-muted-foreground">HR</span>
           </div>
-          <p className="font-bold text-foreground">{soldier.heartRate} bpm</p>
+          <p className="font-bold text-foreground">{soldier.pulse} bpm</p>
         </div>
 
         <div className={`bg-secondary rounded p-3 ${isVitalCritical ? "ring-1 ring-red-500" : ""}`}>
@@ -74,7 +74,7 @@ export function SoldierCard({ soldier, isSelected, onClick }: SoldierCardProps) 
             <Wind size={16} className="text-blue-500" />
             <span className="text-xs text-muted-foreground">O₂</span>
           </div>
-          <p className="font-bold text-foreground">{soldier.oxygenLevel}%</p>
+          <p className="font-bold text-foreground">{soldier.bloodOxygen}%</p>
         </div>
       </div>
 
