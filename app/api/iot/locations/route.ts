@@ -1,66 +1,48 @@
 import { NextResponse } from "next/server"
+import { fetchThingSpeakData, parseThingSpeakVitals } from "@/lib/thingspeak"
 
 export async function GET() {
-  const locationData = {
-    timestamp: new Date().toISOString(),
-    locations: [
-      {
-        soldierId: "SOL001",
-        name: "James Marcus",
-        rank: "LT",
-        latitude: 40.7128 + Math.random() * 0.01 - 0.005,
-        longitude: -74.006 + Math.random() * 0.01 - 0.005,
+  try {
+    const thingSpeakData = await fetchThingSpeakData(50)
+
+    if (!thingSpeakData.feeds || thingSpeakData.feeds.length === 0) {
+      return NextResponse.json({ error: "No location data available" }, { status: 503 })
+    }
+
+    const locations = thingSpeakData.feeds.slice(0, 4).map((feed, index) => {
+      const vitals = parseThingSpeakVitals(feed, `SOL00${index + 1}`)
+
+      return {
+        soldierId: vitals.soldierId,
+        name: `Soldier ${index + 1}`,
+        rank: ["LT", "SGT", "CPL", "PVT"][index % 4],
+        latitude: vitals.latitude,
+        longitude: vitals.longitude,
         accuracy: 5,
-        altitude: 10,
+        altitude: 10 + Math.random() * 5,
         heading: Math.random() * 360,
         speed: Math.random() * 5,
-        lastUpdate: new Date().toISOString(),
-      },
-      {
-        soldierId: "SOL002",
-        name: "Sarah Chen",
-        rank: "SGT",
-        latitude: 40.7131 + Math.random() * 0.01 - 0.005,
-        longitude: -74.0072 + Math.random() * 0.01 - 0.005,
-        accuracy: 5,
-        altitude: 12,
-        heading: Math.random() * 360,
-        speed: Math.random() * 4,
-        lastUpdate: new Date().toISOString(),
-      },
-      {
-        soldierId: "SOL003",
-        name: "David Rodriguez",
-        rank: "CPL",
-        latitude: 40.7135 + Math.random() * 0.01 - 0.005,
-        longitude: -74.0068 + Math.random() * 0.01 - 0.005,
-        accuracy: 5,
-        altitude: 9,
-        heading: Math.random() * 360,
-        speed: Math.random() * 6,
-        lastUpdate: new Date().toISOString(),
-      },
-      {
-        soldierId: "SOL004",
-        name: "Emily Watson",
-        rank: "LT",
-        latitude: 40.714 + Math.random() * 0.01 - 0.005,
-        longitude: -74.0065 + Math.random() * 0.01 - 0.005,
-        accuracy: 5,
-        altitude: 11,
-        heading: Math.random() * 360,
-        speed: Math.random() * 3,
-        lastUpdate: new Date().toISOString(),
-      },
-    ],
-    totalLocations: 4,
-  }
+        lastUpdate: vitals.timestamp,
+      }
+    })
 
-  return NextResponse.json(locationData, {
-    status: 200,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-cache",
-    },
-  })
+    return NextResponse.json(
+      {
+        timestamp: new Date().toISOString(),
+        locations,
+        totalLocations: locations.length,
+        dataSource: "ThingSpeak IoT Cloud",
+      },
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
+        },
+      },
+    )
+  } catch (error) {
+    console.error("Error in /api/iot/locations:", error)
+    return NextResponse.json({ error: "Failed to fetch location data" }, { status: 500 })
+  }
 }

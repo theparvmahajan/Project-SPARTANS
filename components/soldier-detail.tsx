@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Thermometer, Wind, Clock, User, AlertCircle, Heart } from "lucide-react"
+import { MapPin, Thermometer, Wind, Clock, User, AlertCircle, Heart, Battery, Droplets } from "lucide-react"
 import { VitalsChart } from "./vitals-chart"
 import { MapComponent } from "./map-component"
 
@@ -15,6 +15,8 @@ interface Soldier {
   lastUpdate: string
   bloodOxygen: number
   temperature: number
+  battery?: number
+  humidity?: number
 }
 
 interface SoldierDetailProps {
@@ -87,7 +89,7 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
       </div>
 
       {/* Vitals grid */}
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className="grid md:grid-cols-3 gap-4">
         {/* Heart Rate */}
         <div className="bg-card border border-border rounded-lg p-6 space-y-3">
           <div className="flex items-center gap-2">
@@ -167,23 +169,80 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
           </div>
           <p className="text-xs text-muted-foreground">Normal: 36.1-37.2°C</p>
         </div>
+      </div>
 
-        {/* Last Update */}
-        <div className="bg-card border border-border rounded-lg p-6 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-accent/20">
-              <Clock className="w-5 h-5 text-accent" />
+      {/* Battery & Humidity */}
+      {(soldier.battery !== undefined || soldier.humidity !== undefined) && (
+        <div className="grid md:grid-cols-2 gap-4">
+          {soldier.battery !== undefined && (
+            <div className="bg-card border border-border rounded-lg p-6 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-accent/20">
+                  <Battery className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">BATTERY LEVEL</p>
+                  <p className="font-semibold text-sm">Device Power</p>
+                </div>
+              </div>
+              <div className="text-4xl font-bold text-accent font-mono">{soldier.battery.toFixed(0)}</div>
+              <p className="text-sm text-muted-foreground">%</p>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all ${
+                    soldier.battery < 20 ? "bg-destructive" : soldier.battery < 50 ? "bg-yellow-500" : "bg-accent"
+                  }`}
+                  style={{ width: `${Math.min(soldier.battery, 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {soldier.battery < 20 ? "Low battery!" : soldier.battery < 50 ? "Battery running low" : "Battery OK"}
+              </p>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">LAST UPDATE</p>
-              <p className="font-semibold text-sm">Timestamp</p>
+          )}
+
+          {soldier.humidity !== undefined && (
+            <div className="bg-card border border-border rounded-lg p-6 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-accent/20">
+                  <Droplets className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">HUMIDITY</p>
+                  <p className="font-semibold text-sm">Environment</p>
+                </div>
+              </div>
+              <div className="text-4xl font-bold text-accent font-mono">{soldier.humidity.toFixed(0)}</div>
+              <p className="text-sm text-muted-foreground">%</p>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-accent transition-all"
+                  style={{ width: `${Math.min(soldier.humidity, 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {soldier.humidity > 70 ? "High humidity" : soldier.humidity < 30 ? "Low humidity" : "Humidity normal"}
+              </p>
             </div>
-          </div>
-          <p className="text-lg font-mono text-accent truncate">{new Date(soldier.lastUpdate).toLocaleTimeString()}</p>
-          <p className="text-sm text-muted-foreground">
-            {Math.round((Date.now() - new Date(soldier.lastUpdate).getTime()) / 1000)}s ago
-          </p>
+          )}
         </div>
+      )}
+
+      {/* Last Update */}
+      <div className="bg-card border border-border rounded-lg p-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-accent/20">
+            <Clock className="w-5 h-5 text-accent" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">LAST UPDATE</p>
+            <p className="font-semibold text-sm">Timestamp</p>
+          </div>
+        </div>
+        <p className="text-lg font-mono text-accent truncate">{new Date(soldier.lastUpdate).toLocaleTimeString()}</p>
+        <p className="text-sm text-muted-foreground">
+          {Math.round((Date.now() - new Date(soldier.lastUpdate).getTime()) / 1000)}s ago
+        </p>
       </div>
 
       {/* Position */}

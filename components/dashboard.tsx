@@ -41,17 +41,31 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
   useEffect(() => {
     fetchSoldiers()
-    const interval = setInterval(fetchSoldiers, 3000)
+    const interval = setInterval(fetchSoldiers, 2000) // Fetch data every 2 seconds for near real-time updates
     return () => clearInterval(interval)
   }, [])
 
   const fetchSoldiers = async () => {
     try {
-      const response = await fetch("/api/soldiers")
+      console.log("[v0] Fetching soldiers data...")
+      const response = await fetch("/api/soldiers", {
+        cache: "no-store", // Prevent caching
+      })
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Received soldiers data:", data)
         setSoldiers(data.soldiers || [])
         setAlerts(data.alerts || [])
+
+        if (selectedSoldier && data.soldiers.length > 0) {
+          const updatedSoldier = data.soldiers.find((s: Soldier) => s.id === selectedSoldier.id)
+          if (updatedSoldier) {
+            setSelectedSoldier(updatedSoldier)
+          }
+        } else if (!selectedSoldier && data.soldiers.length > 0) {
+          // Auto-select first soldier
+          setSelectedSoldier(data.soldiers[0])
+        }
       }
     } catch (error) {
       console.log("[v0] Error fetching soldiers:", error)
