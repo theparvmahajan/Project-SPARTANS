@@ -4,8 +4,9 @@ const TELEGRAM_BOT_TOKEN = "8558888065:AAFiwXSLZL9Ov2iV5gyavNHSqICSWReLnXw"
 
 export async function POST() {
   try {
-    // Set up webhook URL (you'll need to replace this with your actual deployed URL)
-    const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/telegram/webhook`
+    const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/telegram/webhook`
+    
+    console.log("[v0] Setting webhook URL:", webhookUrl)
     
     const response = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook`,
@@ -19,6 +20,8 @@ export async function POST() {
     )
 
     const result = await response.json()
+    
+    console.log("[v0] Webhook setup result:", result)
     
     return NextResponse.json({
       success: result.ok,

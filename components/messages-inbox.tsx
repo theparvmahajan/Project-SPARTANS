@@ -5,6 +5,7 @@ import { MessageSquare, Send, Clock, CheckCheck, User } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 
 interface Message {
   id: string
@@ -34,22 +35,32 @@ export function MessagesInbox({ soldiers }: MessagesInboxProps) {
     return () => clearInterval(interval)
   }, [])
 
-  const loadMessages = () => {
-    const storedMessages = localStorage.getItem("spartans_messages")
-    if (storedMessages) {
-      const parsed = JSON.parse(storedMessages)
-      setMessages(parsed.sort((a: Message, b: Message) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      ))
+  const loadMessages = async () => {
+    try {
+      const response = await fetch("/api/telegram/messages")
+      if (response.ok) {
+        const data = await response.json()
+        setMessages(data.messages.sort((a: Message, b: Message) => 
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        ))
+      }
+    } catch (error) {
+      console.error("[v0] Failed to load messages:", error)
     }
   }
 
-  const markAsRead = (messageId: string) => {
-    const updatedMessages = messages.map((msg) =>
-      msg.id === messageId ? { ...msg, read: true } : msg
-    )
-    setMessages(updatedMessages)
-    localStorage.setItem("spartans_messages", JSON.stringify(updatedMessages))
+  const markAsRead = async (messageId: string) => {
+    try {
+      await fetch(`/api/telegram/messages/${messageId}/read`, {
+        method: "POST",
+      })
+      const updatedMessages = messages.map((msg) =>
+        msg.id === messageId ? { ...msg, read: true } : msg
+      )
+      setMessages(updatedMessages)
+    } catch (error) {
+      console.error("[v0] Failed to mark as read:", error)
+    }
   }
 
   const handleSelectMessage = (message: Message) => {
@@ -81,7 +92,6 @@ export function MessagesInbox({ soldiers }: MessagesInboxProps) {
             : msg
         )
         setMessages(updatedMessages)
-        localStorage.setItem("spartans_messages", JSON.stringify(updatedMessages))
         setSelectedMessage({
           ...selectedMessage,
           reply: replyText.trim(),

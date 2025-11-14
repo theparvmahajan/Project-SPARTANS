@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { messageStorage } from "@/lib/message-storage"
 
 const TELEGRAM_BOT_TOKEN = "8558888065:AAFiwXSLZL9Ov2iV5gyavNHSqICSWReLnXw"
 
@@ -6,13 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     const { messageId, reply } = await request.json()
 
-    // Get the original message from localStorage (we'll need to pass chatId from frontend)
-    // For now, we'll retrieve it from the request
-    const storedMessages = JSON.parse(
-      request.headers.get("x-stored-messages") || "[]"
-    )
-    
-    const originalMessage = storedMessages.find((msg: any) => msg.id === messageId)
+    const originalMessage = messageStorage.getById(messageId)
     
     if (!originalMessage?.telegramChatId) {
       return NextResponse.json(
@@ -38,6 +33,7 @@ export async function POST(request: NextRequest) {
 
     if (result.ok) {
       console.log("[v0] Reply sent to soldier via Telegram")
+      messageStorage.updateReply(messageId, reply, new Date().toISOString())
       return NextResponse.json({ success: true })
     } else {
       console.error("[v0] Telegram API error:", result)

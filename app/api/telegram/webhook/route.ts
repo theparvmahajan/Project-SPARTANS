@@ -39,10 +39,12 @@ export async function POST(request: NextRequest) {
         read: false,
       }
 
-      // Store in localStorage-like structure (we'll send to frontend)
-      // Since this is server-side, we'll need to handle storage differently
-      // For now, we'll send acknowledgment to Telegram
-      
+      await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/telegram/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      })
+
       // Send acknowledgment to soldier
       await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
         method: "POST",
