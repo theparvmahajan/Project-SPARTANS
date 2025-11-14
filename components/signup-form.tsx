@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { useToast } from "@/components/toast-provider"
-import { AlertCircle, CheckCircle, Lock, Mail, User } from "lucide-react"
+import { AlertCircle, CheckCircle, Lock, Mail, User } from 'lucide-react'
 
 interface SignupFormProps {
   onSuccess: () => void
@@ -26,6 +26,42 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
     return emailRegex.test(email)
   }
 
+  const calculatePasswordStrength = (password: string) => {
+    if (!password) return { strength: "none", score: 0, color: "text-muted-foreground" }
+
+    let score = 0
+    const checks = {
+      length: password.length >= 8,
+      hasLower: /[a-z]/.test(password),
+      hasUpper: /[A-Z]/.test(password),
+      hasNumber: /\d/.test(password),
+      hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      isLong: password.length >= 12,
+    }
+
+    // Calculate score
+    if (checks.length) score += 1
+    if (checks.hasLower) score += 1
+    if (checks.hasUpper) score += 1
+    if (checks.hasNumber) score += 1
+    if (checks.hasSpecial) score += 1
+    if (checks.isLong) score += 1
+
+    // Determine strength
+    if (score <= 2) return { strength: "Weak", score, color: "text-destructive" }
+    if (score <= 4) return { strength: "Medium", score, color: "text-yellow-500" }
+    return { strength: "Strong", score, color: "text-green-500" }
+  }
+
+  const validatePassword = (password: string) => {
+    if (!password) return "Password is required"
+    if (password.length < 8) return "Password must be at least 8 characters"
+    if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter"
+    if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter"
+    if (!/\d/.test(password)) return "Password must contain at least one number"
+    return null
+  }
+
   const validateForm = () => {
     const newErrors: typeof errors = {}
 
@@ -41,10 +77,9 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       newErrors.email = "Please enter a valid email"
     }
 
-    if (!formData.password) {
-      newErrors.password = "Password is required"
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters"
+    const passwordError = validatePassword(formData.password)
+    if (passwordError) {
+      newErrors.password = passwordError
     }
 
     if (!formData.confirmPassword) {
@@ -94,6 +129,8 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
     setFormData({ ...formData, [field]: e.target.value })
     if (errors[field]) setErrors({ ...errors, [field]: undefined })
   }
+
+  const passwordStrength = calculatePasswordStrength(formData.password)
 
   return (
     <div className="space-y-6 bg-card border border-border rounded-xl p-8 animate-slide-in-top shadow-2xl">
@@ -170,8 +207,26 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
               {errors.password}
             </div>
           )}
-          {!errors.password && formData.password && (
-            <p className="text-xs text-muted-foreground mt-1">Password strength: Strong</p>
+          {!errors.password && formData.password && passwordStrength.strength !== "none" && (
+            <div className="mt-2 space-y-1">
+              <p className={`text-xs font-semibold ${passwordStrength.color}`}>
+                Password strength: {passwordStrength.strength}
+              </p>
+              <div className="w-full h-1 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-300 ${
+                    passwordStrength.strength === "Weak"
+                      ? "bg-destructive w-1/3"
+                      : passwordStrength.strength === "Medium"
+                        ? "bg-yellow-500 w-2/3"
+                        : "bg-green-500 w-full"
+                  }`}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Must contain: uppercase, lowercase, number (8+ characters)
+              </p>
+            </div>
           )}
         </div>
 

@@ -5,7 +5,17 @@ import { SoldiersList } from "./soldiers-list"
 import { SoldierDetail } from "./soldier-detail"
 import { AlertsPanel } from "./alerts-panel"
 import { Button } from "@/components/ui/button"
-import { Shield, LogOut, AlertTriangle } from "lucide-react"
+import { Shield, LogOut, AlertTriangle } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Soldier {
   id: string
@@ -38,6 +48,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [selectedSoldier, setSelectedSoldier] = useState<Soldier | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false)
 
   useEffect(() => {
     fetchSoldiers()
@@ -76,6 +87,11 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
   const criticalAlerts = (alerts || []).filter((a) => a.type === "critical" && !a.resolved)
 
+  const handleLogout = () => {
+    setShowLogoutDialog(false)
+    onLogout()
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -93,7 +109,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
               </div>
             )}
             <Button
-              onClick={onLogout}
+              onClick={() => setShowLogoutDialog(true)}
               variant="outline"
               size="sm"
               className="border-accent text-accent hover:bg-accent/10 bg-transparent"
@@ -138,6 +154,24 @@ export function Dashboard({ onLogout }: DashboardProps) {
           </div>
         </div>
       </main>
+
+      {/* Logout confirmation dialog */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to logout? You will be redirected to the home page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout} className="bg-accent hover:bg-accent/90">
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

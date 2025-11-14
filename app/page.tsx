@@ -18,6 +18,15 @@ export default function Home() {
     return () => clearTimeout(timer)
   }, [])
 
+  const handleLogout = () => {
+    setIsLoggedIn(false)
+    setShowLanding(true)
+    setCurrentPage("home")
+    setTimeout(() => {
+      setShowLanding(false)
+    }, 5000)
+  }
+
   if (showLanding) {
     return <LandingPage />
   }
@@ -41,5 +50,5 @@ export default function Home() {
     )
   }
 
-  return <Dashboard onLogout={() => setIsLoggedIn(false)} />
+  return <Dashboard onLogout={handleLogout} />
 }
