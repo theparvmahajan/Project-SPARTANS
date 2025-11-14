@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import { SoldiersList } from "./soldiers-list"
 import { SoldierDetail } from "./soldier-detail"
 import { AlertsPanel } from "./alerts-panel"
-import { Button } from "@/components/ui/button"
-import { Shield, LogOut, AlertTriangle } from 'lucide-react'
+import { ProfileDropdown } from "./profile-dropdown"
+import { Shield, AlertTriangle } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -92,6 +92,10 @@ export function Dashboard({ onLogout }: DashboardProps) {
     onLogout()
   }
 
+  const handleProfileLogout = () => {
+    setShowLogoutDialog(true)
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -108,15 +112,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 <span className="font-semibold text-destructive">{criticalAlerts.length} CRITICAL</span>
               </div>
             )}
-            <Button
-              onClick={() => setShowLogoutDialog(true)}
-              variant="outline"
-              size="sm"
-              className="border-accent text-accent hover:bg-accent/10 bg-transparent"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              LOGOUT
-            </Button>
+            <ProfileDropdown onLogout={handleProfileLogout} />
           </div>
         </div>
       </header>

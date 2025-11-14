@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { useToast } from "@/components/toast-provider"
-import { AlertCircle, CheckCircle, Lock, Mail } from "lucide-react"
+import { AlertCircle, CheckCircle, Lock, Mail } from 'lucide-react'
 
 interface LoginFormProps {
   onSuccess: () => void
@@ -57,7 +57,11 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       const data = await response.json()
 
       if (response.ok) {
-        localStorage.setItem("user", JSON.stringify(data.user))
+        const userData = {
+          ...data.user,
+          joinedDate: new Date().toISOString(),
+        }
+        localStorage.setItem("user", JSON.stringify(userData))
         addToast("Login successful", "success")
         setTimeout(onSuccess, 500)
       } else {

@@ -112,7 +112,11 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       const data = await response.json()
 
       if (response.ok) {
-        localStorage.setItem("user", JSON.stringify(data.user))
+        const userData = {
+          ...data.user,
+          joinedDate: new Date().toISOString(),
+        }
+        localStorage.setItem("user", JSON.stringify(userData))
         addToast("Account created successfully", "success")
         setTimeout(onSuccess, 500)
       } else {
