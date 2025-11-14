@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { messageStorage } from "@/lib/message-storage"
 
 const TELEGRAM_BOT_TOKEN = "8558888065:AAFiwXSLZL9Ov2iV5gyavNHSqICSWReLnXw"
 
@@ -39,11 +40,7 @@ export async function POST(request: NextRequest) {
         read: false,
       }
 
-      await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/telegram/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-      })
+      messageStorage.add(message)
 
       // Send acknowledgment to soldier
       await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -55,7 +52,6 @@ export async function POST(request: NextRequest) {
         }),
       })
 
-      // Return the message so it can be stored on client side
       return NextResponse.json({
         success: true,
         message: message,
