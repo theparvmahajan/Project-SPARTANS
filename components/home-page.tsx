@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Shield, MapPin, Activity, AlertCircle } from "lucide-react"
+import { Shield, MapPin, Activity, AlertCircle } from 'lucide-react'
 
 interface HomePageProps {
   onLoginClick: () => void
@@ -9,6 +9,13 @@ interface HomePageProps {
 }
 
 export function HomePage({ onLoginClick, onSignupClick }: HomePageProps) {
+  const handleLearnMore = () => {
+    const featuresSection = document.getElementById('features-section')
+    if (featuresSection) {
+      featuresSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header with logo */}
@@ -54,7 +61,7 @@ export function HomePage({ onLoginClick, onSignupClick }: HomePageProps) {
                   GET STARTED
                 </Button>
                 <Button
-                  onClick={onLoginClick}
+                  onClick={handleLearnMore}
                   size="lg"
                   variant="outline"
                   className="border-accent text-accent hover:bg-accent/10 bg-transparent"
@@ -63,7 +70,7 @@ export function HomePage({ onLoginClick, onSignupClick }: HomePageProps) {
                 </Button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div id="features-section" className="grid grid-cols-2 gap-4">
               <div className="bg-card border border-border rounded-lg p-6 space-y-3">
                 <Activity className="w-8 h-8 text-accent" />
                 <h3 className="font-semibold">Vital Signs</h3>

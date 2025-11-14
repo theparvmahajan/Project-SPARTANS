@@ -24,7 +24,7 @@ export async function GET() {
     console.log("[v0] Received ThingSpeak data:", latestFeed)
 
     const vitals = parseThingSpeakVitals(latestFeed, "soldier_1")
-    const status = determineSoldierStatus(vitals.heartRate, vitals.temperature, vitals.bloodOxygenSaturation)
+    const status = determineSoldierStatus(vitals.heartRate, vitals.temperature, vitals.bloodOxygenSaturation, vitals.timestamp)
 
     const soldiers = soldierRoster.map((soldier) => ({
       id: soldier.id,
@@ -41,7 +41,6 @@ export async function GET() {
       position: { lat: vitals.latitude, lng: vitals.longitude },
     }))
 
-    // Generate alerts for critical vitals
     const alerts = soldiers
       .filter((s) => s.status === "critical")
       .map((s) => ({

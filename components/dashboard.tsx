@@ -5,7 +5,8 @@ import { SoldiersList } from "./soldiers-list"
 import { SoldierDetail } from "./soldier-detail"
 import { AlertsPanel } from "./alerts-panel"
 import { ProfileDropdown } from "./profile-dropdown"
-import { Shield, AlertTriangle } from 'lucide-react'
+import { Shield, AlertTriangle, LogOut } from 'lucide-react'
+import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -92,6 +93,10 @@ export function Dashboard({ onLogout }: DashboardProps) {
     onLogout()
   }
 
+  const handleLogoutButtonClick = () => {
+    setShowLogoutDialog(true)
+  }
+
   const handleProfileLogout = () => {
     setShowLogoutDialog(true)
   }
@@ -112,6 +117,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 <span className="font-semibold text-destructive">{criticalAlerts.length} CRITICAL</span>
               </div>
             )}
+            <Button
+              onClick={handleLogoutButtonClick}
+              variant="outline"
+              className="border-accent/30 hover:bg-accent/10 hover:border-accent"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
             <ProfileDropdown onLogout={handleProfileLogout} />
           </div>
         </div>

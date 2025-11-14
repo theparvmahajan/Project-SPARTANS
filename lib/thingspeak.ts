@@ -133,13 +133,25 @@ export function parseThingSpeakVitals(feed: ThingSpeakFeed, soldierId: string) {
 }
 
 /**
- * Determine soldier status based on vitals thresholds
+ * Determine soldier status based on vitals thresholds and data freshness
  */
 export function determineSoldierStatus(
   heartRate: number,
   temperature: number,
   bloodOxygen: number,
-): "active" | "warning" | "critical" {
+  lastUpdateTimestamp: string,
+): "active" | "inactive" | "warning" | "critical" {
+  const lastUpdate = new Date(lastUpdateTimestamp)
+  const now = new Date()
+  const minutesSinceUpdate = (now.getTime() - lastUpdate.getTime()) / (1000 * 60)
+  
+  console.log(`[v0] Time since last update: ${minutesSinceUpdate.toFixed(2)} minutes`)
+  
+  if (minutesSinceUpdate > 1) {
+    console.log(`[v0] Data is stale (>${minutesSinceUpdate.toFixed(2)} minutes old), marking as inactive`)
+    return "inactive"
+  }
+
   // Temperature from DHT22 sensor is environmental, not body temp
   if (heartRate > 120 || temperature > 45 || bloodOxygen < 90) {
     return "critical"

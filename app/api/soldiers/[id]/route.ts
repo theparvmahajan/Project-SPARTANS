@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     const vitals = parseThingSpeakVitals(latestFeed, "soldier_1")
-    const status = determineSoldierStatus(vitals.heartRate, vitals.temperature, vitals.bloodOxygenSaturation)
+    const status = determineSoldierStatus(vitals.heartRate, vitals.temperature, vitals.bloodOxygenSaturation, vitals.timestamp)
 
     const soldierDetail = {
       id,
