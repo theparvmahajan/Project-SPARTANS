@@ -39,13 +39,7 @@ export default function Home() {
       <AuthPage
         onAuthSuccess={() => setIsLoggedIn(true)}
         initialMode={currentPage === "signup" ? "signup" : "login"}
-        onSwitchMode={(mode) => {
-          if (mode === "home") {
-            setCurrentPage("home")
-          } else {
-            setCurrentPage(mode)
-          }
-        }}
+        onSwitchMode={(mode) => setCurrentPage(mode)}
       />
     )
   }

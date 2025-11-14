@@ -12,6 +12,19 @@ const soldierRoster = [
   { id: "soldier_8", name: "Amanda Davis", rank: "SPC", unit: "Delta Squadron" },
 ]
 
+function generateCriticalVitals() {
+  return {
+    heartRate: Math.floor(Math.random() * 30) + 150, // 150-180 bpm (critical high)
+    temperature: Math.random() * 2 + 39.5, // 39.5-41.5°C (critical high fever)
+    bloodOxygenSaturation: Math.floor(Math.random() * 10) + 75, // 75-85% (critical low)
+    battery: Math.floor(Math.random() * 20) + 10, // 10-30% (low battery)
+    humidity: Math.floor(Math.random() * 30) + 60, // 60-90%
+    latitude: 28.617 + (Math.random() - 0.5) * 0.01,
+    longitude: 77.199 + (Math.random() - 0.5) * 0.01,
+    timestamp: new Date().toISOString(),
+  }
+}
+
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params
@@ -22,14 +35,34 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ message: "Soldier not found" }, { status: 404 })
     }
 
-    const latestFeed = await fetchLatestThingSpeakReading()
+    let vitals
+    let status
 
-    if (!latestFeed) {
-      return NextResponse.json({ message: "No IoT data available" }, { status: 503 })
+    if (id === "soldier_8") {
+      // Generate critical vitals for Amanda Davis
+      const criticalVitals = generateCriticalVitals()
+      vitals = {
+        heartRate: criticalVitals.heartRate,
+        temperature: criticalVitals.temperature,
+        bloodOxygenSaturation: criticalVitals.bloodOxygenSaturation,
+        battery: criticalVitals.battery,
+        humidity: criticalVitals.humidity,
+        latitude: criticalVitals.latitude,
+        longitude: criticalVitals.longitude,
+        timestamp: criticalVitals.timestamp,
+      }
+      status = "critical" as const
+    } else {
+      // Fetch from ThingSpeak for other soldiers
+      const latestFeed = await fetchLatestThingSpeakReading()
+
+      if (!latestFeed) {
+        return NextResponse.json({ message: "No IoT data available" }, { status: 503 })
+      }
+
+      vitals = parseThingSpeakVitals(latestFeed, "soldier_1")
+      status = determineSoldierStatus(vitals.heartRate, vitals.temperature, vitals.bloodOxygenSaturation, vitals.timestamp)
     }
-
-    const vitals = parseThingSpeakVitals(latestFeed, "soldier_1")
-    const status = determineSoldierStatus(vitals.heartRate, vitals.temperature, vitals.bloodOxygenSaturation, vitals.timestamp)
 
     const soldierDetail = {
       id,
@@ -52,7 +85,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       latitude: vitals.latitude,
       longitude: vitals.longitude,
       location: "Forward Operating Base Alpha",
-      bloodPressure: "120/80",
+      bloodPressure: status === "critical" ? "160/110" : "120/80",
       bloodOxygenSaturation: vitals.bloodOxygenSaturation,
       coreTemperature: vitals.temperature,
       hydrationStatus: vitals.humidity > 70 ? "High" : vitals.humidity < 30 ? "Low" : "Optimal",

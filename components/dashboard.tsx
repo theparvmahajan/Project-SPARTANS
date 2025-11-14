@@ -4,9 +4,11 @@ import { useState, useEffect } from "react"
 import { SoldiersList } from "./soldiers-list"
 import { SoldierDetail } from "./soldier-detail"
 import { AlertsPanel } from "./alerts-panel"
+import { MessagesInbox } from "./messages-inbox"
 import { ProfileDropdown } from "./profile-dropdown"
-import { Shield, AlertTriangle, LogOut } from 'lucide-react'
+import { Shield, AlertTriangle, LogOut, MessageSquare } from 'lucide-react'
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,10 +52,29 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const [selectedSoldier, setSelectedSoldier] = useState<Soldier | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
+  const [selectedSoldierId, setSelectedSoldierId] = useState<string | null>(null)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
+  const [showMessages, setShowMessages] = useState(false)
 
   useEffect(() => {
     fetchSoldiers()
-    const interval = setInterval(fetchSoldiers, 2000) // Fetch data every 2 seconds for near real-time updates
+    const interval = setInterval(fetchSoldiers, 2000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    const checkUnreadMessages = () => {
+      const storedMessages = localStorage.getItem("spartans_messages")
+      if (storedMessages) {
+        const messages = JSON.parse(storedMessages)
+        const unread = messages.filter((msg: any) => !msg.read).length
+        setUnreadMessagesCount(unread)
+      }
+    }
+    
+    checkUnreadMessages()
+    const interval = setInterval(checkUnreadMessages, 3000)
     return () => clearInterval(interval)
   }, [])
 
@@ -61,22 +82,26 @@ export function Dashboard({ onLogout }: DashboardProps) {
     try {
       console.log("[v0] Fetching soldiers data...")
       const response = await fetch("/api/soldiers", {
-        cache: "no-store", // Prevent caching
+        cache: "no-store",
       })
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Received soldiers data:", data)
+        console.log("[v0] Received soldiers data, soldier count:", data.soldiers?.length)
         setSoldiers(data.soldiers || [])
         setAlerts(data.alerts || [])
 
-        if (selectedSoldier && data.soldiers.length > 0) {
-          const updatedSoldier = data.soldiers.find((s: Soldier) => s.id === selectedSoldier.id)
+        if (isInitialLoad && data.soldiers.length > 0) {
+          const firstSoldier = data.soldiers[0]
+          setSelectedSoldier(firstSoldier)
+          setSelectedSoldierId(firstSoldier.id)
+          setIsInitialLoad(false)
+          console.log("[v0] Initial load - auto-selected first soldier:", firstSoldier.name)
+        } else if (selectedSoldierId && data.soldiers.length > 0) {
+          const updatedSoldier = data.soldiers.find((s: Soldier) => s.id === selectedSoldierId)
           if (updatedSoldier) {
             setSelectedSoldier(updatedSoldier)
+            console.log("[v0] Updated selected soldier data:", updatedSoldier.name)
           }
-        } else if (!selectedSoldier && data.soldiers.length > 0) {
-          // Auto-select first soldier
-          setSelectedSoldier(data.soldiers[0])
         }
       }
     } catch (error) {
@@ -84,6 +109,12 @@ export function Dashboard({ onLogout }: DashboardProps) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleSelectSoldier = (soldier: Soldier) => {
+    console.log("[v0] User selected soldier:", soldier.name, soldier.id)
+    setSelectedSoldier(soldier)
+    setSelectedSoldierId(soldier.id)
   }
 
   const criticalAlerts = (alerts || []).filter((a) => a.type === "critical" && !a.resolved)
@@ -111,6 +142,22 @@ export function Dashboard({ onLogout }: DashboardProps) {
             <h1 className="text-2xl font-bold tracking-wider text-accent">SPARTANS</h1>
           </div>
           <div className="flex items-center gap-4">
+            <Button
+              onClick={() => setShowMessages(!showMessages)}
+              variant="outline"
+              className="border-accent/30 hover:bg-accent/10 hover:border-accent relative"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Messages
+              {unreadMessagesCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse"
+                >
+                  {unreadMessagesCount}
+                </Badge>
+              )}
+            </Button>
             {criticalAlerts.length > 0 && (
               <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 border border-destructive/30 rounded-lg">
                 <AlertTriangle className="w-5 h-5 text-destructive animate-pulse" />
@@ -138,27 +185,33 @@ export function Dashboard({ onLogout }: DashboardProps) {
             <SoldiersList
               soldiers={soldiers}
               selectedId={selectedSoldier?.id}
-              onSelect={setSelectedSoldier}
+              onSelect={handleSelectSoldier}
               isLoading={isLoading}
             />
           </div>
 
           {/* Main content area */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Alerts panel */}
-            {alerts.length > 0 && <AlertsPanel alerts={alerts} onResolve={fetchSoldiers} />}
-
-            {/* Soldier detail */}
-            {selectedSoldier ? (
-              <SoldierDetail soldier={selectedSoldier} />
+            {showMessages ? (
+              <MessagesInbox soldiers={soldiers} />
             ) : (
-              <div className="bg-card border border-border rounded-lg p-8 text-center space-y-4">
-                <Shield className="w-12 h-12 text-muted-foreground mx-auto" />
-                <h3 className="text-xl font-semibold">SELECT A SOLDIER</h3>
-                <p className="text-muted-foreground">
-                  Choose a soldier from the list to view their real-time vitals and position data.
-                </p>
-              </div>
+              <>
+                {/* Alerts panel */}
+                {alerts.length > 0 && <AlertsPanel alerts={alerts} onResolve={fetchSoldiers} />}
+
+                {/* Soldier detail */}
+                {selectedSoldier ? (
+                  <SoldierDetail soldier={selectedSoldier} />
+                ) : (
+                  <div className="bg-card border border-border rounded-lg p-8 text-center space-y-4">
+                    <Shield className="w-12 h-12 text-muted-foreground mx-auto" />
+                    <h3 className="text-xl font-semibold">SELECT A SOLDIER</h3>
+                    <p className="text-muted-foreground">
+                      Choose a soldier from the list to view their real-time vitals and position data.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
