@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { messageStorage } from "@/lib/message-storage"
+import { sendEmailNotification } from "@/lib/email"
 
 const TELEGRAM_BOT_TOKEN = "8558888065:AAFiwXSLZL9Ov2iV5gyavNHSqICSWReLnXw"
 
@@ -7,6 +8,18 @@ const TELEGRAM_BOT_TOKEN = "8558888065:AAFiwXSLZL9Ov2iV5gyavNHSqICSWReLnXw"
 const SOLDIER_MAPPING: Record<string, { id: string; name: string }> = {
   "Parv_M": { id: "soldier_1", name: "James Mitchell" },
   // Add more mappings as needed
+}
+
+// Soldier rank mapping for email notifications
+const SOLDIER_RANKS: Record<string, string> = {
+  "soldier_1": "Sergeant",
+  "soldier_2": "Corporal",
+  "soldier_3": "Private First Class",
+  "soldier_4": "Specialist",
+  "soldier_5": "Lance Corporal",
+  "soldier_6": "Private",
+  "soldier_7": "Staff Sergeant",
+  "soldier_8": "Corporal"
 }
 
 export async function POST(request: NextRequest) {
@@ -41,6 +54,20 @@ export async function POST(request: NextRequest) {
       }
 
       messageStorage.add(message)
+
+      try {
+        await sendEmailNotification({
+          soldierName: soldierInfo.name,
+          soldierRank: SOLDIER_RANKS[soldierInfo.id] || "Unknown Rank",
+          soldierId: soldierInfo.id,
+          message: messageText,
+          timestamp: new Date()
+        })
+        console.log("[v0] Email notification sent for:", soldierInfo.name)
+      } catch (emailError) {
+        console.error("[v0] Email notification failed:", emailError)
+        // Continue even if email fails
+      }
 
       // Send acknowledgment to soldier
       await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
