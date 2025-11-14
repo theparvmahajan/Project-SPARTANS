@@ -1,15 +1,20 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown } from 'lucide-react'
 import Link from "next/link"
 
 export function LandingPage() {
   const [animationComplete, setAnimationComplete] = useState(false)
+  const [fadeOut, setFadeOut] = useState(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => setAnimationComplete(true), 2500)
-    return () => clearTimeout(timer)
+    const fadeTimer = setTimeout(() => setFadeOut(true), 2000)
+    const completeTimer = setTimeout(() => setAnimationComplete(true), 2500)
+    return () => {
+      clearTimeout(fadeTimer)
+      clearTimeout(completeTimer)
+    }
   }, [])
 
   return (
@@ -26,10 +31,9 @@ export function LandingPage() {
         ></div>
       </div>
 
-      {/* SPARTANS Logo with animation */}
       <div
-        className={`relative z-10 transition-all duration-1000 ${
-          animationComplete ? "scale-50 -translate-y-32" : "scale-100"
+        className={`relative z-10 transition-all duration-700 ${
+          fadeOut ? "opacity-0 scale-110" : "opacity-100 scale-100"
         }`}
       >
         <div className="animate-pulse-glow">
@@ -42,7 +46,6 @@ export function LandingPage() {
         </p>
       </div>
 
-      {/* Home content - slides in after logo animation */}
       <div
         className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-1000 ${
           animationComplete ? "opacity-100" : "opacity-0 pointer-events-none"
