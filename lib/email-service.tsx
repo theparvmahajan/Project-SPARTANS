@@ -18,6 +18,14 @@ export async function sendMessageNotificationEmail(
 ) {
   try {
     console.log("[v0] Preparing email for soldier:", soldier.name)
+    console.log("[v0] Soldier vitals being sent to email:", {
+      pulse: soldier.pulse,
+      tempC: soldier.tempC,
+      battery: soldier.battery,
+      humidity: soldier.humidity,
+      latitude: soldier.latitude,
+      longitude: soldier.longitude
+    })
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -66,27 +74,27 @@ export async function sendMessageNotificationEmail(
             <div class="vitals">
               <div class="vital-item">
                 <div class="vital-label">Heart Rate</div>
-                <div class="vital-value">${soldier.vitals?.pulse || 'N/A'} ${soldier.vitals?.pulse ? 'bpm' : ''}</div>
+                <div class="vital-value">${soldier.pulse || 'N/A'} ${soldier.pulse ? 'bpm' : ''}</div>
               </div>
               <div class="vital-item">
                 <div class="vital-label">Temperature</div>
-                <div class="vital-value">${soldier.vitals?.tempC || 'N/A'}${soldier.vitals?.tempC ? '°C' : ''}</div>
+                <div class="vital-value">${soldier.tempC || 'N/A'}${soldier.tempC ? '°C' : ''}</div>
               </div>
               <div class="vital-item">
                 <div class="vital-label">Blood Oxygen</div>
-                <div class="vital-value">${soldier.vitals?.bloodOxygen || 'N/A'}${soldier.vitals?.bloodOxygen ? '%' : ''}</div>
+                <div class="vital-value">${soldier.bloodOxygen || 'N/A'}${soldier.bloodOxygen ? '%' : ''}</div>
               </div>
               <div class="vital-item">
                 <div class="vital-label">Battery</div>
-                <div class="vital-value">${soldier.vitals?.battery || 'N/A'}${soldier.vitals?.battery ? '%' : ''}</div>
+                <div class="vital-value">${soldier.battery || 'N/A'}${soldier.battery ? '%' : ''}</div>
               </div>
               <div class="vital-item">
                 <div class="vital-label">GPS Location</div>
-                <div class="vital-value">${soldier.vitals?.latitude ? soldier.vitals.latitude.toFixed(4) : 'N/A'}, ${soldier.vitals?.longitude ? soldier.vitals.longitude.toFixed(4) : 'N/A'}</div>
+                <div class="vital-value">${soldier.latitude ? soldier.latitude.toFixed(4) : 'N/A'}, ${soldier.longitude ? soldier.longitude.toFixed(4) : 'N/A'}</div>
               </div>
               <div class="vital-item">
                 <div class="vital-label">Humidity</div>
-                <div class="vital-value">${soldier.vitals?.humidity || 'N/A'}${soldier.vitals?.humidity ? '%' : ''}</div>
+                <div class="vital-value">${soldier.humidity || 'N/A'}${soldier.humidity ? '%' : ''}</div>
               </div>
             </div>
           </div>
