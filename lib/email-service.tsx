@@ -20,12 +20,18 @@ export async function sendMessageNotificationEmail(
     console.log("[v0] Preparing email for soldier:", soldier.name)
     console.log("[v0] Soldier vitals being sent to email:", {
       pulse: soldier.pulse,
+      temperature: soldier.temperature,
       tempC: soldier.tempC,
       battery: soldier.battery,
       humidity: soldier.humidity,
       latitude: soldier.latitude,
-      longitude: soldier.longitude
+      longitude: soldier.longitude,
+      position: soldier.position
     })
+
+    const latitude = soldier.latitude || soldier.position?.lat
+    const longitude = soldier.longitude || soldier.position?.lng
+    const temperature = soldier.temperature || soldier.tempC
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -78,7 +84,7 @@ export async function sendMessageNotificationEmail(
               </div>
               <div class="vital-item">
                 <div class="vital-label">Temperature</div>
-                <div class="vital-value">${soldier.tempC || 'N/A'}${soldier.tempC ? '°C' : ''}</div>
+                <div class="vital-value">${temperature ? temperature.toFixed(1) : 'N/A'}${temperature ? '°C' : ''}</div>
               </div>
               <div class="vital-item">
                 <div class="vital-label">Blood Oxygen</div>
@@ -90,7 +96,7 @@ export async function sendMessageNotificationEmail(
               </div>
               <div class="vital-item">
                 <div class="vital-label">GPS Location</div>
-                <div class="vital-value">${soldier.latitude ? soldier.latitude.toFixed(4) : 'N/A'}, ${soldier.longitude ? soldier.longitude.toFixed(4) : 'N/A'}</div>
+                <div class="vital-value">${latitude ? latitude.toFixed(4) : 'N/A'}, ${longitude ? longitude.toFixed(4) : 'N/A'}</div>
               </div>
               <div class="vital-item">
                 <div class="vital-label">Humidity</div>

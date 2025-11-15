@@ -84,8 +84,16 @@ export async function POST(request: NextRequest) {
         
         if (soldier) {
           console.log("[v0] Found soldier:", soldier.name)
-          console.log("[v0] Soldier vitals - Pulse:", soldier.pulse, "Temp:", soldier.tempC, "Battery:", soldier.battery)
-          await sendMessageNotificationEmail(messageText, soldier, telegramUsername)
+          console.log("[v0] Soldier vitals - Pulse:", soldier.pulse, "Temp:", soldier.temperature, "Battery:", soldier.battery)
+          console.log("[v0] GPS coords - Lat:", soldier.position?.lat, "Long:", soldier.position?.lng)
+          
+          const soldierForEmail = {
+            ...soldier,
+            latitude: soldier.position?.lat,
+            longitude: soldier.position?.lng,
+          }
+          
+          await sendMessageNotificationEmail(messageText, soldierForEmail, telegramUsername)
           console.log("[v0] ✅ Email sent successfully with full soldier data")
         } else {
           console.log("[v0] ⚠️ Soldier not found in API response, sending with basic info")
@@ -97,7 +105,7 @@ export async function POST(request: NextRequest) {
             unit: soldierInfo.unit,
             status: "active",
             pulse: 0,
-            tempC: 0,
+            temperature: 0,
             battery: 0,
             humidity: 0,
             latitude: 0,
