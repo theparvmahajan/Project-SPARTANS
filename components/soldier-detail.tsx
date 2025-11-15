@@ -78,7 +78,7 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
               }),
               pulse: item.pulse || 0,
             }))
-            setPulseData(formattedData)
+            setPulseData(formattedData.reverse())
           }
         })
         .catch((err) => {
