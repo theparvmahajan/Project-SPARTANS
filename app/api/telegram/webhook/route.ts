@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { messageStorage } from "@/lib/message-storage"
+import { sendMessageNotificationEmail } from "@/lib/email-service"
 
 const TELEGRAM_BOT_TOKEN = "8558888065:AAFiwXSLZL9Ov2iV5gyavNHSqICSWReLnXw"
 
@@ -41,6 +42,20 @@ export async function POST(request: NextRequest) {
       }
 
       messageStorage.add(message)
+
+      try {
+        const soldiersResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "https://v0-soldier-monitoring-system.vercel.app"}/api/soldiers`)
+        const soldiersData = await soldiersResponse.json()
+        const soldier = soldiersData.soldiers?.find((s: any) => s.id === soldierInfo.id)
+
+        if (soldier) {
+          await sendMessageNotificationEmail(messageText, soldier, telegramUsername)
+          console.log("[v0] Email notification sent for message from", soldierInfo.name)
+        }
+      } catch (emailError) {
+        console.error("[v0] Failed to send email notification:", emailError)
+        // Don't fail the webhook if email fails
+      }
 
       // Send acknowledgment to soldier
       await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
