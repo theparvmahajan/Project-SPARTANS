@@ -5,17 +5,20 @@ import { sendMessageNotificationEmail } from "@/lib/email-service"
 const TELEGRAM_BOT_TOKEN = "8558888065:AAFiwXSLZL9Ov2iV5gyavNHSqICSWReLnXw"
 
 // Soldier mapping - map Telegram usernames to soldier IDs
-const SOLDIER_MAPPING: Record<string, { id: string; name: string }> = {
-  "Parv_M": { id: "soldier_1", name: "James Mitchell" },
-  // Add more mappings as needed
+const SOLDIER_MAPPING: Record<string, { id: string; name: string; rank: string; unit: string }> = {
+  "Parv_M": { 
+    id: "soldier_1", 
+    name: "James Mitchell",
+    rank: "Captain",
+    unit: "Alpha Squadron"
+  },
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     console.log("[v0] ========== TELEGRAM WEBHOOK TRIGGERED ==========")
-    console.log("[v0] Full webhook body:", JSON.stringify(body, null, 2))
-    console.log("[v0] Request headers:", Object.fromEntries(request.headers))
+    console.log("[v0] Message body:", JSON.stringify(body, null, 2))
 
     // Handle incoming message from Telegram
     if (body.message && body.message.text) {
@@ -23,15 +26,15 @@ export async function POST(request: NextRequest) {
       const messageText = body.message.text
       const chatId = body.message.chat.id
 
-      console.log("[v0] ===== MESSAGE DETAILS =====")
-      console.log("[v0] From username:", telegramUsername)
+      console.log("[v0] Message from:", telegramUsername)
       console.log("[v0] Message text:", messageText)
-      console.log("[v0] Chat ID:", chatId)
 
       // Map Telegram user to soldier
       const soldierInfo = SOLDIER_MAPPING[telegramUsername] || {
         id: "unknown",
-        name: "Unknown Soldier"
+        name: "Unknown Soldier",
+        rank: "Unknown",
+        unit: "Unknown"
       }
 
       console.log("[v0] Mapped to soldier:", soldierInfo)
@@ -49,40 +52,66 @@ export async function POST(request: NextRequest) {
       }
 
       messageStorage.add(message)
-      console.log("[v0] Message stored in messageStorage")
+      console.log("[v0] Message stored in memory")
 
       try {
-        console.log("[v0] ===== STARTING EMAIL NOTIFICATION PROCESS =====")
-        const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://v0-soldier-monitoring-system.vercel.app"}/api/soldiers`
-        console.log("[v0] Fetching from:", apiUrl)
+        console.log("[v0] Fetching soldier data from API...")
         
-        const soldiersResponse = await fetch(apiUrl)
+        // Get base URL from the incoming request
+        const requestUrl = new URL(request.url)
+        const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`
+        const apiUrl = `${baseUrl}/api/soldiers`
         
-        if (!soldiersResponse.ok) {
-          throw new Error(`Failed to fetch soldiers: ${soldiersResponse.status}`)
+        console.log("[v0] Request URL:", request.url)
+        console.log("[v0] Base URL:", baseUrl)
+        console.log("[v0] API URL:", apiUrl)
+        
+        const soldierResponse = await fetch(apiUrl, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        
+        if (!soldierResponse.ok) {
+          throw new Error(`Soldier API returned ${soldierResponse.status}`)
         }
         
-        const soldiersData = await soldiersResponse.json()
-        console.log("[v0] Fetched soldiers count:", soldiersData.soldiers?.length)
+        const soldierData = await soldierResponse.json()
+        console.log("[v0] Soldier API response received")
         
-        const soldier = soldiersData.soldiers?.find((s: any) => s.id === soldierInfo.id)
-
+        // Find the specific soldier
+        const soldier = soldierData.soldiers?.find((s: any) => s.id === soldierInfo.id)
+        
         if (soldier) {
-          console.log("[v0] Soldier found:", soldier.name)
-          console.log("[v0] Calling sendMessageNotificationEmail...")
-          
-          const emailResult = await sendMessageNotificationEmail(messageText, soldier, telegramUsername)
-          
-          console.log("[v0] Email result:", JSON.stringify(emailResult))
-          console.log("[v0] ===== EMAIL SENT SUCCESSFULLY =====")
+          console.log("[v0] Found soldier:", soldier.name)
+          console.log("[v0] Soldier vitals - Pulse:", soldier.pulse, "Temp:", soldier.tempC, "Battery:", soldier.battery)
+          await sendMessageNotificationEmail(messageText, soldier, telegramUsername)
+          console.log("[v0] ✅ Email sent successfully with full soldier data")
         } else {
-          console.log("[v0] ERROR: Soldier not found in database for ID:", soldierInfo.id)
+          console.log("[v0] ⚠️ Soldier not found in API response, sending with basic info")
+          // Fallback to basic info if soldier not found
+          const soldierForEmail = {
+            id: soldierInfo.id,
+            name: soldierInfo.name,
+            rank: soldierInfo.rank,
+            unit: soldierInfo.unit,
+            status: "active",
+            pulse: 0,
+            tempC: 0,
+            battery: 0,
+            humidity: 0,
+            latitude: 0,
+            longitude: 0,
+          }
+          await sendMessageNotificationEmail(messageText, soldierForEmail, telegramUsername)
+          console.log("[v0] ✅ Email sent with basic soldier info")
         }
       } catch (emailError: any) {
-        console.error("[v0] ===== EMAIL ERROR =====")
+        console.error("[v0] ========== EMAIL ERROR ==========")
         console.error("[v0] Error message:", emailError.message)
         console.error("[v0] Error stack:", emailError.stack)
-        // Don't fail the webhook if email fails
+        console.error("[v0] ==========================================")
+        // Continue even if email fails - don't block webhook
       }
 
       // Send acknowledgment to soldier
@@ -95,18 +124,18 @@ export async function POST(request: NextRequest) {
         }),
       })
 
+      console.log("[v0] Acknowledgment sent to Telegram")
+      console.log("[v0] ========== WEBHOOK COMPLETE ==========")
+
       return NextResponse.json({
         success: true,
         message: message,
       })
-    } else {
-      console.log("[v0] Webhook received but no valid message found")
-      console.log("[v0] Body structure:", Object.keys(body))
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[v0] ===== WEBHOOK FATAL ERROR =====")
+    console.error("[v0] ========== WEBHOOK FATAL ERROR ==========")
     console.error("[v0] Error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
