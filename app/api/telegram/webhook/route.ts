@@ -44,16 +44,26 @@ export async function POST(request: NextRequest) {
       messageStorage.add(message)
 
       try {
+        console.log("[v0] Fetching soldier data for email notification...")
         const soldiersResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "https://v0-soldier-monitoring-system.vercel.app"}/api/soldiers`)
+        
+        if (!soldiersResponse.ok) {
+          throw new Error(`Failed to fetch soldiers: ${soldiersResponse.status}`)
+        }
+        
         const soldiersData = await soldiersResponse.json()
         const soldier = soldiersData.soldiers?.find((s: any) => s.id === soldierInfo.id)
 
         if (soldier) {
+          console.log("[v0] Soldier found, sending email notification...")
           await sendMessageNotificationEmail(messageText, soldier, telegramUsername)
-          console.log("[v0] Email notification sent for message from", soldierInfo.name)
+          console.log("[v0] Email notification sent successfully for", soldierInfo.name)
+        } else {
+          console.log("[v0] Soldier not found in database:", soldierInfo.id)
         }
-      } catch (emailError) {
+      } catch (emailError: any) {
         console.error("[v0] Failed to send email notification:", emailError)
+        console.error("[v0] Email error details:", emailError.message)
         // Don't fail the webhook if email fails
       }
 
