@@ -66,38 +66,58 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
 
   useEffect(() => {
     if (showPulseChart && soldier.id === "soldier_1") {
+      console.log("[v0] Pulse chart opened for soldier:", soldier.id)
       setIsLoadingPulseData(true)
       
       // Function to fetch pulse data from ThingSpeak
-      const fetchPulseData = () => {
-        fetch("/api/soldiers/" + soldier.id + "/history")
-          .then((res) => res.json())
-          .then((data) => {
-            console.log("[v0] Pulse history response:", data)
-            if (data.history && Array.isArray(data.history) && data.history.length > 0) {
-              const formattedData = data.history.map((item: any) => ({
-                time: new Date(item.timestamp).toLocaleTimeString("en-US", { 
-                  hour: "2-digit", 
-                  minute: "2-digit",
-                  second: "2-digit"
-                }),
-                pulse: item.pulse || 0,
-              }))
-              setPulseData(formattedData)
-              console.log("[v0] Pulse data updated:", formattedData.length, "readings")
-            } else {
-              console.log("[v0] No history data in response or empty array")
-              if (pulseData.length === 0) {
-                setPulseData([])
-              }
-            }
-          })
-          .catch((err) => {
-            console.error("[v0] Error fetching pulse history:", err)
-          })
-          .finally(() => {
+      const fetchPulseData = async () => {
+        try {
+          console.log("[v0] Fetching pulse history from API...")
+          const response = await fetch(`/api/soldiers/${soldier.id}/history`)
+          
+          if (!response.ok) {
+            console.error("[v0] API response not OK:", response.status, response.statusText)
             setIsLoadingPulseData(false)
-          })
+            return
+          }
+          
+          const data = await response.json()
+          console.log("[v0] Received pulse history data:", data)
+          
+          if (data.success && data.history && Array.isArray(data.history)) {
+            console.log("[v0] History array length:", data.history.length)
+            
+            if (data.history.length > 0) {
+              const formattedData = data.history.map((item: any, index: number) => {
+                const timestamp = new Date(item.timestamp)
+                console.log(`[v0] Reading ${index}:`, {
+                  raw: item,
+                  timestamp: timestamp.toISOString(),
+                  pulse: item.pulse
+                })
+                return {
+                  time: timestamp.toLocaleTimeString("en-US", { 
+                    hour: "2-digit", 
+                    minute: "2-digit",
+                    second: "2-digit"
+                  }),
+                  pulse: item.pulse || 0,
+                }
+              })
+              
+              console.log("[v0] Setting pulse data with", formattedData.length, "readings")
+              setPulseData(formattedData)
+            } else {
+              console.log("[v0] History array is empty")
+            }
+          } else {
+            console.log("[v0] Invalid data structure received:", data)
+          }
+        } catch (err) {
+          console.error("[v0] Error fetching pulse history:", err)
+        } finally {
+          setIsLoadingPulseData(false)
+        }
       }
       
       // Initial fetch
@@ -105,7 +125,7 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
       
       // Set up polling every 9 seconds for real-time updates
       const interval = setInterval(() => {
-        console.log("[v0] Polling ThingSpeak for new pulse data...")
+        console.log("[v0] Polling for new pulse data (9s interval)...")
         fetchPulseData()
       }, 9000)
       
@@ -114,6 +134,10 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
         console.log("[v0] Clearing pulse data polling interval")
         clearInterval(interval)
       }
+    } else if (!showPulseChart) {
+      console.log("[v0] Pulse chart closed, resetting data")
+      setPulseData([])
+      setIsLoadingPulseData(false)
     }
   }, [showPulseChart, soldier.id])
 
