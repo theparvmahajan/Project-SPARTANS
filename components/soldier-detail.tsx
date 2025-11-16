@@ -82,40 +82,57 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
           }
           
           const data = await response.json()
-          console.log("[v0] Received pulse history data:", data)
+          console.log("[v0] Received API response:", data)
+          console.log("[v0] Response structure:", {
+            success: data.success,
+            hasHistory: !!data.history,
+            isArray: Array.isArray(data.history),
+            historyLength: data.history?.length
+          })
           
-          if (data.success && data.history && Array.isArray(data.history)) {
-            console.log("[v0] History array length:", data.history.length)
+          if (data.success && Array.isArray(data.history) && data.history.length > 0) {
+            console.log("[v0] Processing", data.history.length, "pulse readings")
             
-            if (data.history.length > 0) {
-              const formattedData = data.history.map((item: any, index: number) => {
+            const formattedData = data.history
+              .filter((item: any) => item && item.timestamp && item.pulse) // Filter out invalid entries
+              .map((item: any, index: number) => {
                 const timestamp = new Date(item.timestamp)
-                console.log(`[v0] Reading ${index}:`, {
-                  raw: item,
-                  timestamp: timestamp.toISOString(),
-                  pulse: item.pulse
+                const formattedTime = timestamp.toLocaleTimeString("en-US", { 
+                  hour: "2-digit", 
+                  minute: "2-digit",
+                  second: "2-digit"
                 })
+                const pulseValue = Number(item.pulse) || 0
+                
+                console.log(`[v0] Entry ${index}:`, {
+                  timestamp: item.timestamp,
+                  formattedTime,
+                  pulse: pulseValue
+                })
+                
                 return {
-                  time: timestamp.toLocaleTimeString("en-US", { 
-                    hour: "2-digit", 
-                    minute: "2-digit",
-                    second: "2-digit"
-                  }),
-                  pulse: item.pulse || 0,
+                  time: formattedTime,
+                  pulse: pulseValue,
                 }
               })
-              
-              console.log("[v0] Setting pulse data with", formattedData.length, "readings")
-              setPulseData(formattedData)
-            } else {
-              console.log("[v0] History array is empty")
-            }
+            
+            console.log("[v0] Formatted data array:", formattedData)
+            console.log("[v0] Setting pulse data with", formattedData.length, "valid readings")
+            setPulseData(formattedData)
+            setIsLoadingPulseData(false)
           } else {
-            console.log("[v0] Invalid data structure received:", data)
+            console.log("[v0] No valid history data received")
+            console.log("[v0] Data state:", {
+              success: data.success,
+              history: data.history,
+              type: typeof data.history,
+              isArray: Array.isArray(data.history)
+            })
+            setPulseData([])
+            setIsLoadingPulseData(false)
           }
         } catch (err) {
           console.error("[v0] Error fetching pulse history:", err)
-        } finally {
           setIsLoadingPulseData(false)
         }
       }
@@ -401,35 +418,35 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
                 <p className="text-2xl font-bold text-accent">
                   {pulseData.length > 0
                     ? Math.round(pulseData.reduce((sum, d) => sum + d.pulse, 0) / pulseData.length)
-                    : soldier.pulse} bpm
+                    : soldier.pulse}{" "}
+                  bpm
                 </p>
               </div>
               <div className="bg-muted/30 rounded-lg p-4 space-y-1">
                 <p className="text-xs text-muted-foreground">STATUS</p>
-                <p className={`text-2xl font-bold ${getHealthColor(healthStatus)}`}>
-                  {healthStatus}
-                </p>
+                <p className={`text-2xl font-bold ${getHealthColor(healthStatus)}`}>{healthStatus}</p>
               </div>
             </div>
-            
+
             <div className="bg-card border border-border rounded-lg p-6">
               <h3 className="text-lg font-semibold mb-4 text-accent">Historical Pulse Trend</h3>
+              {console.log("[v0] Render check:", { isLoadingPulseData, pulseDataLength: pulseData.length, pulseData })}
               {isLoadingPulseData ? (
                 <div className="flex items-center justify-center h-[280px]">
                   <p className="text-muted-foreground">Loading pulse data...</p>
                 </div>
-              ) : pulseData.length > 0 ? (
+              ) : pulseData && pulseData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={pulseData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(238, 82, 83, 0.1)" />
-                    <XAxis 
-                      dataKey="time" 
+                    <XAxis
+                      dataKey="time"
                       stroke="rgba(255, 255, 255, 0.5)"
-                      tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 12 }}
+                      tick={{ fill: "rgba(255, 255, 255, 0.7)", fontSize: 12 }}
                     />
-                    <YAxis 
+                    <YAxis
                       stroke="rgba(255, 255, 255, 0.5)"
-                      tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 12 }}
+                      tick={{ fill: "rgba(255, 255, 255, 0.7)", fontSize: 12 }}
                       domain={[40, 140]}
                     />
                     <Tooltip
@@ -452,14 +469,18 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[280px]">
+                <div className="flex flex-col items-center justify-center h-[280px] gap-2">
                   <p className="text-muted-foreground">No historical data available</p>
+                  <p className="text-xs text-muted-foreground">
+                    {soldier.id === "soldier_1" 
+                      ? "Waiting for ThingSpeak data..." 
+                      : "Real-time data only available for soldier_1"}
+                  </p>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-end">
-            </div>
+            <div className="flex justify-end"></div>
           </div>
         </DialogContent>
       </Dialog>
