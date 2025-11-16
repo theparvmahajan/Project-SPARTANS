@@ -66,93 +66,47 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
 
   useEffect(() => {
     if (showPulseChart && soldier.id === "soldier_1") {
-      console.log("[v0] Pulse chart opened for soldier:", soldier.id)
       setIsLoadingPulseData(true)
       
-      // Function to fetch pulse data from ThingSpeak
       const fetchPulseData = async () => {
         try {
-          console.log("[v0] Fetching pulse history from API...")
           const response = await fetch(`/api/soldiers/${soldier.id}/history`)
           
           if (!response.ok) {
-            console.error("[v0] API response not OK:", response.status, response.statusText)
+            console.error("[v0] API error:", response.status)
             setIsLoadingPulseData(false)
             return
           }
           
           const data = await response.json()
-          console.log("[v0] Received API response:", data)
-          console.log("[v0] Response structure:", {
-            success: data.success,
-            hasHistory: !!data.history,
-            isArray: Array.isArray(data.history),
-            historyLength: data.history?.length
-          })
           
-          if (data.success && Array.isArray(data.history) && data.history.length > 0) {
-            console.log("[v0] Processing", data.history.length, "pulse readings")
-            
+          if (data.success && Array.isArray(data.history)) {
             const formattedData = data.history
-              .filter((item: any) => item && item.timestamp && item.pulse) // Filter out invalid entries
-              .map((item: any, index: number) => {
-                const timestamp = new Date(item.timestamp)
-                const formattedTime = timestamp.toLocaleTimeString("en-US", { 
+              .filter((item: any) => item?.timestamp && item?.pulse)
+              .map((item: any) => ({
+                time: new Date(item.timestamp).toLocaleTimeString("en-US", { 
                   hour: "2-digit", 
                   minute: "2-digit",
                   second: "2-digit"
-                })
-                const pulseValue = Number(item.pulse) || 0
-                
-                console.log(`[v0] Entry ${index}:`, {
-                  timestamp: item.timestamp,
-                  formattedTime,
-                  pulse: pulseValue
-                })
-                
-                return {
-                  time: formattedTime,
-                  pulse: pulseValue,
-                }
-              })
+                }),
+                pulse: Number(item.pulse) || 0,
+              }))
             
-            console.log("[v0] Formatted data array:", formattedData)
-            console.log("[v0] Setting pulse data with", formattedData.length, "valid readings")
+            console.log("[v0] Setting pulse data:", formattedData.length, "readings")
             setPulseData(formattedData)
-            setIsLoadingPulseData(false)
-          } else {
-            console.log("[v0] No valid history data received")
-            console.log("[v0] Data state:", {
-              success: data.success,
-              history: data.history,
-              type: typeof data.history,
-              isArray: Array.isArray(data.history)
-            })
-            setPulseData([])
-            setIsLoadingPulseData(false)
           }
+          setIsLoadingPulseData(false)
         } catch (err) {
-          console.error("[v0] Error fetching pulse history:", err)
+          console.error("[v0] Fetch error:", err)
           setIsLoadingPulseData(false)
         }
       }
       
-      // Initial fetch
       fetchPulseData()
+      const interval = setInterval(fetchPulseData, 9000)
       
-      // Set up polling every 9 seconds for real-time updates
-      const interval = setInterval(() => {
-        console.log("[v0] Polling for new pulse data (9s interval)...")
-        fetchPulseData()
-      }, 9000)
-      
-      // Cleanup interval on unmount or when dialog closes
-      return () => {
-        console.log("[v0] Clearing pulse data polling interval")
-        clearInterval(interval)
-      }
+      return () => clearInterval(interval)
     } else if (!showPulseChart) {
-      console.log("[v0] Pulse chart closed, resetting data")
       setPulseData([])
       setIsLoadingPulseData(false)
     }
@@ -430,12 +384,20 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
 
             <div className="bg-card border border-border rounded-lg p-6">
               <h3 className="text-lg font-semibold mb-4 text-accent">Historical Pulse Trend</h3>
-              {console.log("[v0] Render check:", { isLoadingPulseData, pulseDataLength: pulseData.length, pulseData })}
               {isLoadingPulseData ? (
                 <div className="flex items-center justify-center h-[280px]">
                   <p className="text-muted-foreground">Loading pulse data...</p>
                 </div>
-              ) : pulseData && pulseData.length > 0 ? (
+              ) : pulseData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[280px] gap-2">
+                  <p className="text-muted-foreground">No historical data available</p>
+                  <p className="text-xs text-muted-foreground">
+                    {soldier.id === "soldier_1" 
+                      ? "Waiting for ThingSpeak data..." 
+                      : "Real-time data only available for soldier_1"}
+                  </p>
+                </div>
+              ) : (
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={pulseData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(238, 82, 83, 0.1)" />
@@ -468,15 +430,6 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
                     />
                   </LineChart>
                 </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-[280px] gap-2">
-                  <p className="text-muted-foreground">No historical data available</p>
-                  <p className="text-xs text-muted-foreground">
-                    {soldier.id === "soldier_1" 
-                      ? "Waiting for ThingSpeak data..." 
-                      : "Real-time data only available for soldier_1"}
-                  </p>
-                </div>
               )}
             </div>
 
