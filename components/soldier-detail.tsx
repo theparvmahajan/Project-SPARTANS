@@ -73,7 +73,8 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
         fetch("/api/soldiers/" + soldier.id + "/history")
           .then((res) => res.json())
           .then((data) => {
-            if (data.history && Array.isArray(data.history)) {
+            console.log("[v0] Pulse history response:", data)
+            if (data.history && Array.isArray(data.history) && data.history.length > 0) {
               const formattedData = data.history.map((item: any) => ({
                 time: new Date(item.timestamp).toLocaleTimeString("en-US", { 
                   hour: "2-digit", 
@@ -82,13 +83,17 @@ export function SoldierDetail({ soldier }: SoldierDetailProps) {
                 }),
                 pulse: item.pulse || 0,
               }))
-              setPulseData(formattedData.reverse())
+              setPulseData(formattedData)
               console.log("[v0] Pulse data updated:", formattedData.length, "readings")
+            } else {
+              console.log("[v0] No history data in response or empty array")
+              if (pulseData.length === 0) {
+                setPulseData([])
+              }
             }
           })
           .catch((err) => {
             console.error("[v0] Error fetching pulse history:", err)
-            setPulseData([])
           })
           .finally(() => {
             setIsLoadingPulseData(false)
