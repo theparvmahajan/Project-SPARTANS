@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { messageStorage } from "@/lib/message-storage"
 import { sendMessageNotificationEmail } from "@/lib/email-service"
 
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
+const TELEGRAM_BOT_TOKEN = "8558888065:AAFiwXSLZL9Ov2iV5gyavNHSqICSWReLnXw"
 
 // Soldier mapping - map Telegram usernames to soldier IDs
 const SOLDIER_MAPPING: Record<string, { id: string; name: string; rank: string; unit: string }> = {
