@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { messageStorage } from "@/lib/message-storage"
 
-const TELEGRAM_BOT_TOKEN = "8558888065:AAFiwXSLZL9Ov2iV5gyavNHSqICSWReLnXw"
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 
 export async function POST(request: NextRequest) {
   try {
