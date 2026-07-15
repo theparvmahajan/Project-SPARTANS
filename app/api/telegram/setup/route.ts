@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-const TELEGRAM_BOT_TOKEN = "8558888065:AAFiwXSLZL9Ov2iV5gyavNHSqICSWReLnXw"
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 
 export async function POST() {
   try {
